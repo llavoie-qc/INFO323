@@ -1,0 +1,219 @@
+/*
+-- =========================================================================== A
+Produit : CoFELI.Exemple.Universite/2021
+Composant : schema_rel_e02-offre5fn.txt
+Responsable : Luc.LAVOIE@USherbrooke.ca
+Version : 0.3.a (2021-02-25)
+Statut : travail en cours
+Encodage : UTF-8, sans BOM; fin de ligne simple (LF)
+Plateformes : S. O.
+-- =========================================================================== A
+*/
+
+/*
+-- =========================================================================== B
+== But
+
+Illustrer la construction d’un schéma relationnel simple selon les règles de l’art.
+
+== Problème
+
+Modélisation des entités utiles à la gestion des inscriptions étudiantes universitaires.
+
+== Étape 02
+
+Traitement de l’offre (planifiée et effective).
+
+-- =========================================================================== B
+*/
+
+--
+-- TYPES
+--
+type Bureau = ...
+type Cause = ...
+type CDC = ...
+type MatriculeE = ...
+type MatriculeP = ...
+type NoGroupe = ...
+type Nom = ...
+type Note = ...
+type Sigle = ...
+type Titre = ...
+type Trimestre = ...
+
+--
+-- RELATIONS
+--
+var Étudiant {matriculeE : MatriculeE, nom : Nom, ddn : Date}
+  pred « L’étudiant identifié par le matricule "matriculeE" a pour nom "nom" et est né le "ddn". »
+  df matriculeE -> nom
+  df matriculeE -> ddn
+  cle {matriculeE}
+
+var Professeur {matriculeP : Matricule, nom : Nom}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour nom "nom". »
+  df matriculeP -> nom
+  cle {matriculeP}
+
+var Professeur_Bureau_PRE {matriculeP : Matricule, bureau : Bureau}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour bureau "bureau". »
+  df matriculeP -> bureau
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+var Professeur_Bureau_ABS {matriculeP : Matricule, cause : Cause}
+  pred « Le professeur identifié par le matricule "matriculeP" n’a pas de bureau
+         pour la raison "cause". »
+  df matriculeP -> cause
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+inv Professeur_Bureau_INV
+  pred « Tout professeur a soit un bureau soit une raison pour laquelle il n’en a pas. »
+  Professeur 𝞹 {matriculeP} =
+    ((Professeur_Bureau_ABS 𝞹 {matriculeP})
+      UnionD (Professeur_Bureau_PRE 𝞹 {matriculeP})
+
+var Cours {sigle : Sigle, titre : Titre, crédit: CDC}
+  pred « Le cours identifié par le sigle "sigle" a pour titre "titre" et
+         comporte "credit" crédit(s). »
+  df sigle -> titre
+  df sigle -> crédit
+  cle {sigle}
+
+var Groupe {sigle : Sigle, trimestre : Trimestre, noGroupe : NoGroupe}
+  pred « Le groupe identifié par le sigle "sigle" et le numéro "noGroupe"
+         au sein du trimestre "trimestre" est constitué. »
+  cle {sigle, trimestre, noGroupe}
+  ref {sigle} -> Cours
+
+var Affectation {sigle : Sigle, trimestre : Trimestre, noGroupe : NoGroupe, matriculeP : MatriculeP}
+  pred « Le professeur "matriculeP" assure la formation du groupe identifié par
+         sigle "sigle", le numéro "noGroupe" et le trimestre "trimestre". »
+  -- Pour permettre à un groupe de professeurs d’assurer la formation, il faudrait
+  -- ajouter matriculeP à la clé candidate.
+  cle {sigle, trimestre, noGroupe}
+  ref {sigle, trimestre, noGroupe} -> Groupe
+  ref {matriculeP} -> Professeur
+
+var Inscription {matriculeE : MatriculeE, sigle : Sigle, trimestre : Trimestre, noGroupe : NoGroupe)
+  pred « L’étudiant "matriculeE" est inscrit au groupe identifié par
+         sigle "sigle", le numéro "noGroupe" et le trimestre "trimestre". »
+  cle {matriculeE, sigle, trimestre, noGroupe}
+  ref {sigle, trimestre, noGroupe} -> Groupe
+
+var Évaluation {matriculeE : MatriculeE, sigle : Sigle, trimestre : Trimestre, noGroupe : NoGroupe, note : Note)
+  pred « L’étudiant "matriculeE" inscrit au groupe identifié par
+         sigle "sigle", le numéro "noGroupe" et le trimestre "trimestre"
+         a obtenu la note "note". »
+  df sigle, trimestre, noGroupe, matriculeE -> note
+  cle {matriculeE, sigle, trimestre, noGroupe}
+  ref {sigle, trimestre, noGroupe, matriculeE} -> Inscription
+
+var Préalable {sigle, siglePréalable}
+  pred « L’inscription au cours "sigle" n’est autorisée qu’aux étudiants qui auront réussi
+         le cours "siglePréalable" avant le début du cours "sigle". »
+  cle {sigle, siglePréalable}
+  ref {sigle} -> Cours
+  ref {siglePralable -> sigle} -> Cours
+
+var Offre {sigle : Sigle, trimestre : Trimestre}
+  pred « L’Université s’engage à offrir le cours "sigle" au trimestre "trimestre". »
+  -- correspond à l’offre planifiée
+  cle {sigle, trimestre}
+  ref {sigle} -> Cours
+
+var Compétence {sigle : Sigle, matriculeP : MatriculeP}
+  pred « Le professeur "matriculeP" est compétent pour enseigner le cours "sigle". »
+  cle {sigle, matriculeP}
+  ref {sigle} -> Cours
+  ref {matriculeP} -> Professeur
+
+var Disponibilité {trimestre : Trimestre, matriculeP : MatriculeP}
+  pred « Le professeur "matriculeP" est disponible pour enseigner au trimestre "trimestre". »
+  cle {trimestre, matriculeP}
+  ref {trimestre} -> Cours
+  ref {matriculeP} -> Professeur
+
+inv Affectation_comp
+  pred « Affectation est conforme à Compétence. »
+  Affectation 𝞹 {sigle, matricleP} ⊆ Compétence
+
+inv Affectation_disp
+  pred « Affectation est conforme à Disponibilité. »
+  Affectation 𝞹 {trimestre, matriculeP} ⊆ Disponibilité
+
+fun Offre_non_couverte () : relation {sigle : Sigle; trimestre : Trimestre}
+  res « Les cours de l’offre (planifiée) non couverts par l’affection (offre effective). »
+  return (Offre - Affectation 𝞹 {sigle, trimestre})
+
+fun Offre_eff_conf_pla () : boolean
+  res « Affectation (offre effective) est conforme à l’offre (planifiée). »
+  return Offre_non_couverte () = ∅
+
+/*
+-- =========================================================================== Y
+== Question
+
+Il eut été incorrect de définir l’invariant suivant en lieu et place des
+fonctions Offre_non_couverte et Offre_eff_conf_pla. Pourquoi ?
+
+inv Affectation_offre
+  pred « Affectation est conforme à Offre. »
+  (Offre - Affection 𝞹 {sigle, trimestre}) = ∅
+-- =========================================================================== Y
+*/
+
+/*
+-- =========================================================================== Z
+== Contributeurs
+  (CK) Christina.KHNAISSER@USherbrooke.ca,
+  (LL) Luc.LAVOIE@USherbrooke.ca
+
+== Adresse, droits d’auteur et copyright
+  Groupe Μῆτις (Métis)
+  Département d’informatique
+  Faculté des sciences
+  Université de Sherbrooke
+  Sherbrooke (Québec)  J1K 2R1
+  Canada
+  http://info.usherbrooke.ca/llavoie/
+  [CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0)]
+
+== Tâches projetées
+TODO 2020-09-17 (LL) : Réaliser les étapes subséquentes
+  * e03 : définition des types à partir du dictionnaire de données.
+    ** Illustration du bon usage des contraintes de type.
+  * e04 : affinement des types Cause (d’absence), Sigle (de cours) et Trimestre
+    ** Illustration des tables de code.
+    ** Illustration des dangers des attributs composites, en particulier en regard des clés.
+  * e05 : affinement du concept de trimestre.
+    ** Illustration de l’explicitation des attributs afin d’éviter les « constantes cachées ».
+  * e06 : division en schémas.
+    ** Gestion de la complexité et du couplage par la visibilité.
+    ** Gestion de l’intégrité et de la sécurité par le contrôle d’accès.
+
+== Tâches réalisées
+2020-03-25 (LL) : Réalisation de l’étape 02
+  * Traitement explicite de l’offre de cours (programmée et effective).
+    ** Illustration du traitement de la 5FN.
+2021-02-23 (LL) : Réalisation de l’étape e01.
+  * Prise en compte de l’absence potentielle de certaines valeurs.
+    ** Illustration du traitement de l’annulabilité :
+       *** cas non applicable (note lors de l’inscription) ;
+       *** cas non disponible (bureau du professeur) ;
+       *** par DPJ ;
+       *** par DRU.
+2021-02-18 (LL) : Réalisation de l’étape e00.
+  * Prise en compte des entités de base Étudiant, Professeur, Cours, Groupe...
+    ** Illustration de la construction par entité et dépendances fonctionnelles.
+2021-02-15 (LL) : Création initiale inspirée de l’exemple développé en 2014.
+
+== Références
+[ddv] http://info.usherbrooke.ca/llavoie/enseignement/Exemples/Universite/
+      Universite_DDV.pdf
+[std] http://info.usherbrooke.ca/llavoie/enseignement/Modules/
+      BD190-STD-SQL-01_NDC.pdf
+-- =========================================================================== Z
+*/

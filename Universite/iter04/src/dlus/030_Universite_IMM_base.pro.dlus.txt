@@ -1,0 +1,111 @@
+/*
+-- =========================================================================== A
+Produit : CoFELI.Exemple.Universite
+Variante : 2021.iter04
+Artefact : Universite_IMM_base.pro.dlus.txt
+Responsable : Luc.LAVOIE@USherbrooke.ca
+Version : 0.1.0a (2021-03-21)
+Statut : travail en cours
+Encodage : UTF-8, sans BOM; fin de ligne simple (LF)
+Plateformes : S. O.
+-- =========================================================================== A
+*/
+
+--
+--  Programmer l’interface machine-machine IMM_base pour la base de données Universite
+--  La définition est faite par ailleurs (voir fichier Universite_IMM_base.def.dlus.txt).
+--  Les autorisations d’accès sont faites par ailleurs (voir fichier Universite_IMM_baseacc.dlus.txt).
+--
+programmer interface Universite.IMM_base :
+
+importer Universite.MDD ;
+
+--
+--  Ajouter, retirer, modifier : un professeur, un étudiant, un cours, une offre un groupe.
+--
+
+--  Professeur
+--  TODO 2021-03-19 (LL) : Ajouter, retirer, modifier un professeur
+
+--  Étudiant
+--  TODO 2021-03-19 (LL) : Ajouter, retirer, modifier un étudiant
+
+--  Cours
+--  TODO 2021-03-19 (LL) : Ajouter, retirer, modifier un cours
+
+--  Offre
+--  TODO 2021-03-19 (LL) : Ajouter, retirer, modifier une offre
+
+--  Groupe
+--  TODO 2021-03-19 (LL) : Ajouter, retirer, modifier un groupe
+
+
+--
+--  Ajouter, retirer : une compétence, une disponibilité ou une affectation à un professeur.
+--
+--  TODO 2021-03-19 (LL) : Ajouter, retirer : une compétence, une disponibilité ou une affectation à un professeur.
+
+--
+--  Ajouter, retirer : une inscription d’un étudiant à un groupe.
+--
+--  TODO 2021-03-19 (LL) : Ajouter, retirer : une inscription d’un étudiant à un groupe.
+
+--
+--  Ajouter, retirer : un préalable à un cours.
+--
+--  TODO 2021-03-19 (LL) : Ajouter, retirer : un préalable à un cours.
+
+--
+--  Attribuer, modifier : une note à un étudiant en regard d’une inscription à un groupe.
+--
+--  TODO 2021-03-19 (LL) : Attribuer, modifier : une note à un étudiant en regard d’une inscription à un groupe.
+
+--
+--  Déterminer si un étudiant remplit les conditions préalables à un cours.
+--
+--  TODO 2021-03-19 (LL) : Déterminer si un étudiant remplit les conditions préalables à un cours.
+
+--
+--  Déterminer si l’offre effective est en accord avec l’offre planifiée.
+--
+fun Offre_plan_non_couverte () : relation {sigle : Sigle; trimestre : Trimestre}
+  val (Offre - Affectation 𝞹 {sigle, trimestre}) ;
+
+f? Offre_eff_conforme ()
+  val Offre_plan_non_couverte () = ∅ ;
+
+--  Terminer la programmation et fermer la portée ouverte
+fin Universite.IMM_base ;
+
+/*
+-- =========================================================================== Z
+
+=== Contributeurs
+  (CK) Christina.KHNAISSER@USherbrooke.ca,
+  (LL) Luc.LAVOIE@USherbrooke.ca
+
+=== Adresse, droits d’auteur et copyright
+  Groupe Μῆτις (Métis)
+  Département d’informatique
+  Faculté des sciences
+  Université de Sherbrooke
+  Sherbrooke (Québec)  J1K 2R1
+  Canada
+  http://info.usherbrooke.ca/llavoie/
+  [CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0)]
+
+=== Tâches projetées
+  TODO 2021-03-19 (LL) : compléter l’IMM après la remise du Devoir no 3.
+
+=== Tâches réalisées
+  2021-03-19 (LL) : Réalisation de l’étape 04
+    - Définition de l’IMM depuis l’ébauche issue de l’étape 03.
+
+=== Références
+[ddv] http://info.usherbrooke.ca/llavoie/enseignement/Exemples/Universite/
+      Universite_DDV.pdf
+[std] http://info.usherbrooke.ca/llavoie/enseignement/Modules/
+      BD190-STD-SQL-01_NDC.pdf
+
+-- =========================================================================== Z
+*/

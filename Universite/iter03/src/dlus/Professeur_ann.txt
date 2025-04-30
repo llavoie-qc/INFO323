@@ -1,0 +1,123 @@
+/* V00-sans-annulabilité */
+---------------------------
+var Professeur {matriculeP : Matricule, nom : Nom, bureau : Bureau}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour nom "nom" et pour bureau "bureau". »
+  df matriculeP -> nom
+  df matriculeP -> bureau
+  cle {matriculeP}
+
+/* V01-annulabilité simple (PJ) */
+----------------------------------
+var Professeur {matriculeP : Matricule, nom : Nom}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour nom "nom". »
+  df matriculeP -> nom
+  cle {matriculeP}
+
+var Professeur_Bureau_PRE {matriculeP : Matricule, bureau : Bureau}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour bureau "bureau". »
+  df matriculeP -> bureau
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+-- vue originale
+vue Professeur%complet := Professeur ⨝ Professeur_Bureau_PRE
+
+/* V02-annulabilité avec cause (PJ+RU) */
+-----------------------------------------
+var Professeur {matriculeP : Matricule, nom : Nom}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour nom "nom". »
+  df matriculeP -> nom
+  cle {matriculeP}
+
+var Professeur_Bureau_PRE {matriculeP : Matricule, bureau : Bureau}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour bureau "bureau". »
+  df matriculeP -> bureau
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+var Professeur_Bureau_ABS {matriculeP : Matricule, cause : Cause}
+  pred « Le professeur identifié par le matricule "matriculeP" n'a pas de bureau
+         pour la raison "cause". »
+  df matriculeP -> cause
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+inv Professeur_Bureau_INV
+  pred « Tout professeur a soit un bureau soit une raison pour laquelle il n’en a pas. »
+  Professeur 𝞹 {matriculeP} =
+    ((Professeur_Bureau_ABS 𝞹 {matriculeP})
+      UnionD (Professeur_Bureau_PRE 𝞹 {matriculeP})
+
+-- vue originale
+type Bureau_ann : Bureau ∪ Cause
+vue Professeur%complet {matriculeP : Matricule, nom : Nom, bureau : Bureau_ann} :=
+  Professeur ⨝ (
+     Professeur_Bureau_PRE 𝛒 {bureau:b} 𝝃 {bureau := Bureau_ann[b]} 𝞹 {matriculeB, bureau}
+     UnionD
+     Professeur_Bureau_ABS 𝝃 {bureau := Bureau_ann[cause]} 𝞹 {matriculeB, bureau}
+     )
+
+/* V03-annulable-facile */
+--------------------------
+var Professeur {matriculeP : Matricule, nom : Nom, bureau : Bureau @NULC, site : Site @NULC}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour nom "nom" et pour bureau "bureau". »
+  df matriculeP -> nom
+  df matriculeP -> bureau
+  cle {matriculeP}
+
+/* V04-expansion-de-la-V03 */
+-----------------------------
+var Professeur {matriculeP : Matricule, nom : Nom}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour nom "nom". »
+  df matriculeP -> nom
+  cle {matriculeP}
+
+var Professeur_Bureau_PRE {matriculeP : Matricule, bureau : Bureau}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour bureau "bureau". »
+  df matriculeP -> bureau
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+var Professeur_Bureau_ABS {matriculeP : Matricule, cause : Cause}
+  pred « Le professeur identifié par le matricule "matriculeP" n'a pas de bureau pour la raison "cause". »
+  df matriculeP -> cause
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+inv Professeur_Bureau_INV
+  pred « Tout professeur a soit un bureau soit une raison pour laquelle il n’en a pas. »
+  Professeur 𝞹 {matriculeP} =
+    ((Professeur_Bureau_ABS 𝞹 {matriculeP})
+      UnionD (Professeur_Bureau_PRE 𝞹 {matriculeP})
+
+var Professeur_Site_PRE {matriculeP : Matricule, site : Site}
+  pred « Le professeur identifié par le matricule "matriculeP" a pour site "site". »
+  df matriculeP -> site
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+var Professeur_Site_ABS {matriculeP : Matricule, cause : Cause}
+  pred « Le professeur identifié par le matricule "matriculeP" n'a pas de site pour la raison "cause". »
+  df matriculeP -> cause
+  cle {matriculeP}
+  ref {matriculeP} -> Professeur
+
+inv Professeur_Site_INV
+  pred « Tout professeur a soit un site soit une raison pour laquelle il n’en a pas. »
+  Professeur 𝞹 {matriculeP} =
+    ((Professeur_Site_ABS 𝞹 {matriculeP})
+      UnionD (Professeur_Site_PRE 𝞹 {matriculeP})
+
+-- vue originale
+type Bureau_ann : Site ∪ Cause
+vue Professeur%complet {matriculeP : Matricule, nom : Nom, bureau : Bureau_ann} :=
+  Professeur ⨝ (
+     Professeur_Bureau_PRE 𝛒 {bureau:b} 𝝃 {bureau := Bureau_ann[b]} 𝞹 {matriculeB, bureau}
+     UnionD
+     Professeur_Bureau_ABS 𝝃 {bureau := Bureau_ann[cause]} 𝞹 {matriculeB, bureau}
+     ) ⨝ (
+     Professeur_Site_PRE 𝛒 {site:s} 𝝃 {site := Site_ann[s]} 𝞹 {matriculeB, site}
+     UnionD
+     Professeur_Site_ABS 𝝃 {site := Site_ann[cause]} 𝞹 {matriculeB, site}
+     )
+

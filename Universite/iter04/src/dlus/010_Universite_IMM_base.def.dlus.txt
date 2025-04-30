@@ -1,0 +1,338 @@
+/*
+-- =========================================================================== A
+Produit : CoFELI.Exemple.Universite
+Variante : 2021.iter04
+Artefact : Universite_IMM_base.def.dlus.txt
+Responsable : Luc.LAVOIE@USherbrooke.ca
+Version : 0.1.0a (2021-03-21)
+Statut : travail en cours
+Encodage : UTF-8, sans BOM; fin de ligne simple (LF)
+Plateformes : S. O.
+-- =========================================================================== A
+*/
+
+/*
+-- =========================================================================== B
+
+=== But
+
+Illustrer la construction d’un schéma relationnel simple selon les règles de l’art.
+
+=== Problème
+
+Modéliser les entités et les opérations réputées utiles à la gestion des
+inscriptions étudiantes universitaires.
+
+=== Iteration 04
+
+Définir l’interface machine-machine (IMM) de la base de données Universite, interface
+correspondant aux fonctionnalités de base recherchées suivantes :
+
+  * Ajouter, retirer, modifier : un professeur, un étudiant, un cours, une offre un groupe.
+  * Ajouter, retirer : une compétence, une disponibilité ou une affectation à un professeur.
+  * Ajouter, retirer : une inscription d’un étudiant à un groupe.
+  * Ajouter, retirer : un préalable à un cours.
+  * Attribuer, modifier : la note d’un étudiant en regard d’une inscription à un groupe.
+  * Déterminer si un étudiant remplit les conditions préalables à un cours.
+  * Déterminer si l’offre effective d’un trimestre est en accord avec l’offre planifiée.
+
+L’IMM est aussi appelée souvent appelée interface programmatique ou, en anglais,
+application programming interface (API).
+
+=== Notation
+
+Quatre types d’assertions sont utilisées :
+
+  * inv : un invariant que la mise en oeuvre est tenue de respecter,
+  * ante : un antécédent que l’appelant d’une routine est tenu d’assurer à l’appel,
+  * cons : un conséquent que la routine appelée est tenue d’assurer au retour de l’appel,
+  * coro : un corolaire, qui peut donc être déduit des précédents.
+
+Dans tous les cas, les assertions sont énoncées à des fins de documentation et
+de vérification (possiblement automatisée).
+
+Les prédicats utilisés dans les assertions peuvent prendre deux formes :
+
+  * une expression logique formelle ;
+  * un texte délimité par des guillemets.
+
+Toute fonction __sans antécédent__ dont le type est `Booleen` peut être spécifiée de façon abrégée.
+Par exemple, l’entête
+  `f? Prof (m : MatriculeP)`
+est équivalent à l’entête
+  `fun Prof? (m : MatriculeP) : Booleen`
+Dans les deux cas, l’appel de la fonction prend la forme
+  `Prof?(x)`
+où `x` est une expression de type `MatriculeP`.
+
+Lorsque la définition d’une routine comporte un antécédent, une fonction lui est automatiquement associée.
+Cette fonction a pour identifiant le nom de la routine suivie sur symbole "?".
+Par exemple :
+....
+  fun Prof_bureau (m : MatriculeP) : Bureau
+  ante Prof?(m) ∧ « Un bureau est attribué au professeur dont le matricule est "m". »
+  res « Le bureau attribué au professeur dont le matricule est "m". » ;
+....
+engendre automatiquement la fonction Prof_bureau? suivante (en plus de la fonction
+Prof_bureau elle-même) :
+....
+  f? Prof_bureau (m : MatriculeP)
+  res Prof?(m) ∧ « Un bureau est attribué au professeur dont le matricule est "m". » ;
+....
+
+Deux pratiques se remarquent dans la dénomination des paramètres formels des routines
+des interfaces aux bases de données :
+
+ 1. l’utilisation de la lettre initiale des attributs correspondants
+    (avec la possibilité de collisions qui entrainent la nécessité de gérer des exceptions),
+    exemple : +
+    `proc Prof_engager_bureau (n : Nom, b : Bureau -> m : MatriculeP) ;`
+ 2. la préfixation de l’identifiant de l’attribut correspondant par le caractère "_"
+    (avec la verbosité que cela entraine souvent),
+    exemple : +
+    `proc Prof_engager_bureau (_nom : Nom, _bureau : Bureau -> _matriculeP : MatriculeP) ;`
+
+Pour traiter les paramètres multiples qui renvoient à un même identifiant d’attribut,
+il est convenu de suffixer le nom du paramètre d’un discriminant débutant par "_".
+Si nous préférons en général la pratique 2, nous avons utilisé ici la pratique 1
+par souci de compacité (au détriment de la vérifiabilité et de l’évolutivité).
+
+=== Choix de modélisation
+
+Les matricules étudiants (MatriculeE) et les matricules enseignants (MatriculeP)
+sont distingués même s’ils ont, accidentellement, la même représentation. Cette
+décision découle d’une exigence (ici présumée) qu’il ne doit pas être possible
+de déduire le matricule étudiant du matricule enseignant (et réciproquement).
+Le modèle de données doit alors être de défini de telle sorte que l’exigence soit
+satisfaite, ce qui entraine, en particulier, la nécessité de distinguer les deux
+types (mais forcément leur représentation).
+
+Les noms des routines renvoient au domaine d’application (la gestion des
+inscriptions étudiantes universitaires) plutôt qu’au modèle formel utilisé
+pour décrire le modèle de données (Prof_Engager plutôt que Prof_Inserer).
+Bien que ce choix soit débattable (et débattu), nous nous y conformerons,
+reportant ce débat à un autre moment, lorsqu’il sera question des
+méthodes d’analyse, de spécification et de validation.
+
+Par ailleurs les actions du domaine d’application symétriques à celles qui sont
+réalisées grâce à une insertion sont rarement mises en oeuvre par un retrait.
+Ain un professeur engagé ou un étudiant admis s’ils sont insérés dans
+la base de données, sont rarement retirés lors de leur fin d’emploi (retraite,
+départ ou mise à pied) ou ou de leur fin d’études (diplomation, abandon, exclusion).
+Il est plutôt requis de noter qu’ils ne sont plus actifs et la raison pour
+laquelle ils ne le sont plus. Pour le moment, notre modèle de données n’est donc
+pas réaliste puisqu’il spécifie que ces opérations sont des retraits purs et simples.
+
+Encore une fois, on remarque que les routines de l’interface sont stéréotypées.
+Un mécanisme d’extension du langage permettant d’encapsuler certains stéréotypes
+serait vraisemblablement très avantageux, tant pour réduire le travail requis
+pour la mise en oeuvre que pour la réduction des erreurs (notamment de saisie).
+On remarquera également qu’un tel mécanisme d’extension s’apparente à la généricité.
+Dès lors que le sous-typage est foncièrement une partie constituante du modèle du
+langage, il est permis de se demander si la généralisation de la généricité à
+l’héritage multiple (voir Eiffel) est vraiment requise. Au risque de paraitre
+rétrograde, on peut même se demander si la version initiale du langage Ada (sans
+héritage) ne pourrait pas apporter un éclairage intéressant à la définition d’un
+langage de modélisation et de mise en oeuvre de bases de données.
+
+-- =========================================================================== B
+*/
+
+--
+--  Définir l’interface machine-machine IMM_base pour la base de données Universite.
+--  La mise en oeuvre est faite par ailleurs (voir fichier Universite_IMM_base.pro.dlus.txt).
+--  Les autorisations d’accès sont faites par ailleurs (voir fichier Universite_IMM_base.acc.dlus.txt).
+--
+creer interface Universite.IMM_base ;
+
+--
+--  Définir l’interface précédemment créée.
+--
+definir interface Universite.IMM_base :
+
+--
+--  TYPES
+--
+type Bureau : Texte (val ~ '[A-Z][0-9]{1,2}-[0-9]{4}(-[0-9]{2})?') ;
+type Cause : Texte ;
+type CDC : Entier (1 ≤ val ≤ 90) ;
+type MatriculeE : Texte (val ~ '[a-z]{4}[0-9]{4}') ;
+type MatriculeP : Texte (val ~ '[a-z]{4}[0-9]{4}') ;
+type NoGroupe : Texte (val ~ '[0-9]{2}') ;
+type Nom : Texte (long(val) ≤ 120 ∧ val ~ '[[:alpha:]]+([-\' [:alpha:]])*[[:alpha:]]+') ;
+type Note : Entier (0 ≤ val ≤ 100) ;
+type Sigle : Texte (val ~ '[A-Z]{3}[0-9]{3}') ;
+type Titre : Texte ;
+type Trimestre : Texte (val ~ '[0-9]{4}-[1-3]') ;
+
+--
+--  ROUTINES
+--
+
+--
+--  Ajouter, retirer, modifier : un professeur, un étudiant, un cours, une offre un groupe.
+--
+--  Professeur
+f? Prof (m : MatriculeP)
+res « Il existe un professeur dont le matricule est "m". » ;
+
+fun Prof_nom (m : MatriculeP) : Nom
+ante Prof?(m)
+res « Le nom du professeur dont le matricule est "m". » ;
+
+fun Prof_bureau (m : MatriculeP) : Bureau
+ante Prof?(m) ∧ « Un bureau est attribué au professeur dont le matricule est "m". »
+res « Le bureau attribué au professeur dont le matricule est "m". » ;
+
+fun Prof_cause (m : MatriculeP) : Cause
+ante Prof?(m) ∧ « Un bureau n’est pas attribué au professeur dont le matricule est "m". »
+res « La cause pour laquelle un bureau n’est pas attribué au professeur dont le matricule est "m". » ;
+
+inv Prof_bureau?(m) ∧ ¬ Prof_cause?(m) ;
+
+proc Prof_engager_bureau (n : Nom, b : Bureau -> m : MatriculeP)
+cons Prof_bureau?(m) ∧ Prof_bureau(m) = b ;
+
+proc Prof_engager_cause (n : Nom, b : Bureau -> m : MatriculeP)
+cons Prof_cause?(m) ∧ Prof_cause(m) = c ;
+
+proc Prof_modifier_nom (m : MatriculeP, n : Nom)
+ante Prof?(m)
+cons Prof_nom(m) = n ;
+
+proc Prof_attribuer_bureau (m : MatriculeP, b : Bureau)
+cons Prof_bureau(m) = b
+coro « Si le professeur a déjà un bureau, cela a pour effet de changer le bureau. » ;
+
+proc Prof_retirer_bureau (m : MatriculeP, c : Cause)
+cons Prof_cause(m) = c ;
+coro « Si le professeur n’a pas déjà un bureau, cela a pour effet de changer la cause. » ;
+
+proc Prof_retirer (m : MatriculeP)
+ante Prof(m)?
+cons ¬ Prof(m)?
+coro (¬ Prof_nom?(m)) ∧ (¬ Prof_cause?(m)) ;
+
+--  Étudiant
+f? Etud (m : MatriculeE)
+res « Il existe un étudiant dont le matricule est "m". » ;
+
+fun Etud_fiche (m : MatriculeE) : tuple {nom : Nom, ddn : Date}
+ante Etud?(m)
+res « Le nom et la date de naissance de l’étudiant dont le matricule est "m". » ;
+
+proc Etud_admettre (n : Nom, d : Date -> m : MatriculeE)
+cons Etud_fiche(m) = tuple {nom := n; ddn := d} ;
+
+proc Etud_modifier_nom (m : MatriculeE, n : Nom)
+ante Etud?(m)
+cons Etud_fiche(m).nom = n ;
+
+proc Etud_modifier_ddn (m : MatriculeE, d : Date)
+ante Etud?(m)
+cons Etud_fiche(m).ddn = d ;
+
+proc Etud_retirer (m : MatriculeE)
+ante Etud(m)?
+cons ¬ Etud(m)?
+
+--  Cours
+f? Cours (s : Sigle)
+res « Il existe un cours dont le sigle est "s". » ;
+
+fun Cours_fiche (s : Sigle) : tuple {titre : Titre, credit : CDC}
+ante Cours?(s)
+res « Le titre et le nombre de crédits du cours dont le sigle est "s". » ;
+
+proc Cours_inscrire (t : Titre, c : CDC -> s : Sigle)
+cons Cours_fiche(s) = tuple {titre := t; credit := c} ;
+
+proc Cours_modifier_titre (s : Sigle, t : Titre)
+ante Cours?(s)
+cons Cours_fiche(s).titre = t ;
+
+proc Cours_modifier_credit (s : Sigle, c : CDC)
+ante Cours?(s)
+cons Cours_fiche(s).credit = c ;
+
+proc Cours_retirer (s : Sigle)
+ante Cours(s)?
+cons ¬ Cours(s)?
+
+--  Offre
+TODO 2021-03-19 (LL) : Ajouter, retirer, modifier une offre
+
+--  Groupe
+TODO 2021-03-19 (LL) : Ajouter, retirer, modifier un groupe
+
+
+--
+--  Ajouter, retirer : une compétence, une disponibilité ou une affectation à un professeur.
+--
+TODO 2021-03-19 (LL) : Ajouter, retirer : une compétence, une disponibilité ou une affectation à un professeur.
+
+--
+--  Ajouter, retirer : une inscription d’un étudiant à un groupe.
+--
+TODO 2021-03-19 (LL) : Ajouter, retirer : une inscription d’un étudiant à un groupe.
+
+--
+--  Ajouter, retirer : un préalable à un cours.
+--
+TODO 2021-03-19 (LL) : Ajouter, retirer : un préalable à un cours.
+
+--
+--  Attribuer, modifier : une note à un étudiant en regard d’une inscription à un groupe.
+--
+TODO 2021-03-19 (LL) : Attribuer, modifier : une note à un étudiant en regard d’une inscription à un groupe.
+
+--
+--  Déterminer si un étudiant remplit les conditions préalables à un cours.
+--
+TODO 2021-03-19 (LL) : Déterminer si un étudiant remplit les conditions préalables à un cours.
+
+--
+--  Déterminer si l’offre effective d’un trimestre est en accord avec l’offre planifiée.
+--
+fun Offre_plan_non_couverte () : relation {sigle : Sigle; trimestre : Trimestre}
+  res « Les cours de l’offre (planifiée) non couverts par l’offre effective (affection). » ;
+
+f? Offre_eff_conforme ()
+  res « Offre effective (affectation) est conforme à l’offre (planifiée). » ;
+
+--  Terminer la définition et fermer la portée ouverte
+fin Universite.IMM_base ;
+
+/*
+-- =========================================================================== Z
+
+=== Contributeurs
+  (CK) Christina.KHNAISSER@USherbrooke.ca,
+  (LL) Luc.LAVOIE@USherbrooke.ca
+
+=== Adresse, droits d’auteur et copyright
+  Groupe Μῆτις (Métis)
+  Département d’informatique
+  Faculté des sciences
+  Université de Sherbrooke
+  Sherbrooke (Québec)  J1K 2R1
+  Canada
+  http://info.usherbrooke.ca/llavoie/
+  [CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0)]
+
+=== Tâches projetées
+  TODO 2021-03-19 (LL) : documenter le type d’assertion "res".
+  TODO 2021-03-19 (LL) : compléter l’IMM après la remise du Devoir no 3.
+
+=== Tâches réalisées
+  2021-03-19 (LL) : Réalisation de l’étape 04
+    - Définition de l’IMM depuis l’ébauche issue de l’étape 03.
+
+=== Références
+[ddv] http://info.usherbrooke.ca/llavoie/enseignement/Exemples/Universite/
+      Universite_DDV.pdf
+[std] http://info.usherbrooke.ca/llavoie/enseignement/Modules/
+      BD190-STD-SQL-01_NDC.pdf
+
+-- =========================================================================== Z
+*/
