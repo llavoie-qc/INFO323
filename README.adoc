@@ -4,6 +4,6 @@ Matériel de cours de l’activité INFO323 — Exploitation et modélisation de
 * Plan de l’activité (INFO323_2025-1_PDM.pdf)
 * Standard de programmation SQL (STD-SQL-01_NT.pdf)
 * Matériel de la troisième semaine de prestation (/S03)
-* Matériel du travail de session (/TS)
+* Matériel du travail pratique (/TP)
 
 // include::Foire aux questions.adoc[]
